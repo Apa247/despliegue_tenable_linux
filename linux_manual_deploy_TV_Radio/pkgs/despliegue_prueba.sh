@@ -83,9 +83,14 @@ install_agent() {
         apt install -y "$CURRENT_PATH/$AGENT_FILE"
     fi
 
-    # Vincular el agente
-    /opt/nessus_agent/sbin/nessuscli agent link --cloud --key="$NESSUS_KEY" --groups="$AGENT_GROUP"
-
+    # Verifica si el archivo nessuscli existe antes de continuar
+    if [[ -f /opt/nessus_agent/sbin/nessuscli ]]; then
+        # Vincular el agente
+        /opt/nessus_agent/sbin/nessuscli agent link --cloud --key="$NESSUS_KEY" --groups="$AGENT_GROUP"
+    else
+        echo "Error: NessusCLI no se encontró después de la instalación."
+        exit 1
+    fi
     # Iniciar servicio Nessus
     systemctl enable nessusagent
     systemctl start nessusagent
