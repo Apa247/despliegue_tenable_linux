@@ -12,12 +12,12 @@ AGENT_FILE=""
 # Función para seleccionar el grupo
 select_group() {
     echo "Seleccione el grupo al que desea añadir el agente:"
-    PS3="Elija una opción (1-5): "
-    options=("ING_TV-SOPTEC" "ING_TV-ATSIN" "INGTV-Des_Produccion" "ING_RADIO" "ING_RADIO-Alcance_TI")
+    PS3="Elija una opción (1-3): "
+    options=("TI-Comunicaciones" "TI-Infraestructura" "TI-PltCorporativa")
 
     select group in "${options[@]}"; do
         case $group in
-            "ING_TV-SOPTEC"|"ING_TV-ATSIN"|"INGTV-Des_Produccion"|"ING_RADIO"|"ING_RADIO-Alcance_TI")
+            "TI-Comunicaciones"|"TI-Infraestructura"|"TI-PltCorporativa")
                 AGENT_GROUP=$group
                 echo "Grupo seleccionado: $group"
                 break
@@ -57,6 +57,18 @@ detect_os_and_agent_file() {
     fi
 }
 
+# Función para eliminar Nessus Agent completamente
+purge_agent() {
+    echo "Eliminando completamente el Nessus Agent si ya está instalado..."
+    if dpkg -l | grep -q nessus-agent; then
+        sudo dpkg --purge nessus-agent
+        sudo rm -rf /opt/nessus_agent /etc/nessus
+        echo "Eliminación completada."
+    else
+        echo "Nessus Agent no está instalado."
+    fi
+}
+
 # Función para instalar Nessus Agent
 install_agent() {
     echo "Instalando Nessus Agent..."
@@ -69,6 +81,9 @@ install_agent() {
 
     # Ruta actual
     CURRENT_PATH=$(pwd)
+
+    # Eliminar completamente Nessus Agent si ya estaba instalado
+    purge_agent
 
     # Importar GPG (solo RedHat)
     if [[ $OS == "RedHat" ]]; then
@@ -83,7 +98,7 @@ install_agent() {
         apt install -y "$CURRENT_PATH/$AGENT_FILE"
     fi
 
-    # Verifica si el archivo nessuscli existe antes de continuar
+    # Verificar si el archivo nessuscli existe antes de continuar
     if [[ -f /opt/nessus_agent/sbin/nessuscli ]]; then
         # Vincular el agente
         /opt/nessus_agent/sbin/nessuscli agent link --cloud --key="$NESSUS_KEY" --groups="$AGENT_GROUP"
@@ -91,8 +106,8 @@ install_agent() {
         echo "Error: NessusCLI no se encontró después de la instalación."
         exit 1
     fi
+
     # Iniciar servicio Nessus
-    systemctl enable nessusagent
     systemctl start nessusagent
 
     echo "Instalación y configuración completadas."
@@ -103,10 +118,6 @@ uninstall_agent() {
     echo "Desinstalando Nessus Agent..."
 
     /opt/nessus_agent/sbin/nessuscli agent unlink --force
-
-    # Detener y deshabilitar el servicio
-    systemctl stop nessusagent
-    systemctl disable nessusagent
 
     # Detectar OS
     detect_os_and_agent_file
@@ -145,3 +156,4 @@ select opt in "${options[@]}"; do
         *) echo "Opción inválida, intente nuevamente." ;;
     esac
 done
+
