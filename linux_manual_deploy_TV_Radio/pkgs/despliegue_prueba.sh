@@ -118,7 +118,10 @@ install_agent() {
 uninstall_agent() {
     echo "Desinstalando Nessus Agent..."
 
-    /opt/nessus_agent/sbin/nessuscli agent unlink --force
+    # Desvincular el agente
+    if [[ -f /opt/nessus_agent/sbin/nessuscli ]]; then
+        /opt/nessus_agent/sbin/nessuscli agent unlink --force
+    fi
 
     # Detener y deshabilitar el servicio
     systemctl stop nessusagent
@@ -131,11 +134,11 @@ uninstall_agent() {
     if [[ $OS == "RedHat" ]]; then
         yum remove -y NessusAgent
     elif [[ $OS == "Debian" ]]; then
-        dpkg -r nessus-agent
+        dpkg --purge nessus-agent
     fi
 
     # Eliminar restos
-    rm -rf /opt/nessus_agent /etc/nessus
+    rm -rf /opt/nessus_agent /etc/nessus /var/nessus /var/log/nessus /var/lib/nessus /var/run/nessus
 
     echo "Desinstalación y limpieza completadas."
 }
@@ -161,4 +164,3 @@ select opt in "${options[@]}"; do
         *) echo "Opción inválida, intente nuevamente." ;;
     esac
 done
-
