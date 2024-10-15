@@ -77,6 +77,8 @@ purge_agent() {
             systemctl stop nessusagent
             systemctl disable nessusagent
             dpkg --purge nessus-agent
+            apt-get remove --purge -y nessus-agent
+            apt-get autoremove -y
             rm -rf /opt/nessus_agent /etc/nessus /var/nessus /var/log/nessus /var/lib/nessus /var/run/nessus
             echo "Eliminación completada."
         else
