@@ -60,12 +60,28 @@ detect_os_and_agent_file() {
 # Función para eliminar Nessus Agent completamente
 purge_agent() {
     echo "Eliminando completamente el Nessus Agent si ya está instalado..."
-    if dpkg -l | grep -q nessus-agent; then
-        sudo dpkg --purge nessus-agent
-        sudo rm -rf /opt/nessus_agent /etc/nessus
-        echo "Eliminación completada."
-    else
-        echo "Nessus Agent no está instalado."
+    if [[ $OS == "RedHat" ]]; then
+        if rpm -q NessusAgent; then
+            /opt/nessus_agent/sbin/nessuscli agent unlink --force
+            systemctl stop nessusagent
+            systemctl disable nessusagent
+            yum remove -y NessusAgent
+            rm -rf /opt/nessus_agent /etc/nessus /var/nessus /var/log/nessus /var/lib/nessus /var/run/nessus
+            echo "Eliminación completada."
+        else
+            echo "Nessus Agent no está instalado."
+        fi
+    elif [[ $OS == "Debian" ]]; then
+        if dpkg -l | grep -q nessus-agent; then
+            /opt/nessus_agent/sbin/nessuscli agent unlink --force
+            systemctl stop nessusagent
+            systemctl disable nessusagent
+            dpkg --purge nessus-agent
+            rm -rf /opt/nessus_agent /etc/nessus /var/nessus /var/log/nessus /var/lib/nessus /var/run/nessus
+            echo "Eliminación completada."
+        else
+            echo "Nessus Agent no está instalado."
+        fi
     fi
 }
 
@@ -118,27 +134,11 @@ install_agent() {
 uninstall_agent() {
     echo "Desinstalando Nessus Agent..."
 
-    # Desvincular el agente
-    if [[ -f /opt/nessus_agent/sbin/nessuscli ]]; then
-        /opt/nessus_agent/sbin/nessuscli agent unlink --force
-    fi
-
-    # Detener y deshabilitar el servicio
-    systemctl stop nessusagent
-    systemctl disable nessusagent
-
     # Detectar OS
     detect_os_and_agent_file
 
-    # Desinstalar paquete
-    if [[ $OS == "RedHat" ]]; then
-        yum remove -y NessusAgent
-    elif [[ $OS == "Debian" ]]; then
-        dpkg --purge nessus-agent
-    fi
-
-    # Eliminar restos
-    rm -rf /opt/nessus_agent /etc/nessus /var/nessus /var/log/nessus /var/lib/nessus /var/run/nessus
+    # Eliminar completamente Nessus Agent si ya estaba instalado
+    purge_agent
 
     echo "Desinstalación y limpieza completadas."
 }
