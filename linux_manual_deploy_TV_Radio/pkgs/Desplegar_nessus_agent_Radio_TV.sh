@@ -105,7 +105,7 @@ uninstall_agent() {
     if [[ $OS == "RedHat" ]]; then
         yum remove -y NessusAgent
     elif [[ $OS == "Debian" ]]; then
-        dpkg -r nessus-agent
+        dpkg -r NessusAgent
     fi
 
     # Eliminar restos
